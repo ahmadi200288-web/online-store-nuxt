@@ -211,8 +211,12 @@
 </template>
 
 <script setup lang="ts">
+
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+definePageMeta({
+  middleware: 'admin'
+})
 
 interface Product {
   id: string | number;

@@ -121,81 +121,8 @@
     {
       "id": "2",
       "userId": "2",
-      "items": [
-        {
-          "id": "1766783007654",
-          "name": "Dell 16 Plus",
-          "price": 670,
-          "brand": "Dell",
-          "category": "Laptop",
-          "description": "gfh h etyhtr5h 5hrht ",
-          "image": "/images/Dell 16 Plus.jpg",
-          "quantity": 3,
-          "priceAtPurchase": 590
-        },
-        {
-          "id": "1766783197901",
-          "name": "Samsung Galaxy Z Fold",
-          "price": 1200,
-          "brand": "samsung",
-          "category": "mobile",
-          "description": "rsfg er erh erh ",
-          "image": "/images/galaxy z fold.jpg",
-          "flashInfo": null,
-          "currentPrice": 1200,
-          "isSale": false,
-          "quantity": 1,
-          "priceAtPurchase": 1090
-        },
-        {
-          "id": "1766783033878",
-          "name": "HP OmniBook X 14",
-          "price": 770,
-          "image": "/images/HP OmniBook X 14.jpg",
-          "quantity": 1,
-          "priceAtPurchase": 770
-        }
-      ],
-      "wishlist": [
-        {
-          "id": "1766783033878",
-          "name": "HP OmniBook X 14",
-          "price": 770,
-          "image": "/images/HP OmniBook X 14.jpg",
-          "category": "laptop",
-          "brand": "hp",
-          "currentPrice": 770,
-          "isSale": false
-        },
-        {
-          "id": "1766782920062",
-          "name": "Apple iphone 17",
-          "price": 980,
-          "brand": "apple",
-          "category": "mobile",
-          "description": "dsgfsdfhedthdtrj tr jrjh j tr",
-          "image": "/images/Apple iPhone 17.jpg",
-          "flashInfo": {
-            "id": "5d86",
-            "productId": 1766782920062,
-            "discountPrice": 890,
-            "endTime": 1774552718203,
-            "timeLeft": "56:22:10"
-          },
-          "currentPrice": 890,
-          "isSale": true
-        },
-        {
-          "id": "1766783226301",
-          "name": "Apple Iphone 17 Air",
-          "price": 880,
-          "image": "/images/apple-iphone-air.jpg",
-          "category": "mobile",
-          "brand": "apple",
-          "currentPrice": 820,
-          "isSale": true
-        }
-      ]
+      "items": [],
+      "wishlist": []
     },
     {
       "id": "1",
