@@ -5,16 +5,18 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
+    "server": "json-server --watch db.json --port 3004",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@pinia/nuxt": "^0.11.3",
-    "axios": "^1.14.0",
-    "nuxt": "^4.4.2",
-    "pinia": "^3.0.4",
-    "vue": "^3.5.30",
-    "vue-router": "^5.0.4"
+    "@pinia/nuxt": "^0.5.1",
+    "axios": "^1.7.2",
+    "json": "^11.0.0",
+    "json-server": "^1.0.0-beta.1",
+    "nuxt": "^3.12.3",
+    "pinia": "^2.1.7",
+    "server": "^1.0.42"
   }
 }
