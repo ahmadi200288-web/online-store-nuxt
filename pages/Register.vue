@@ -88,7 +88,7 @@ const handleRegister = async (): Promise<void> => {
       role: 'user'
     }
 
-    const res = await axios.post<RegisterResponse>('http://localhost:3000/users', payload)
+    const res = await axios.post<RegisterResponse>('/api/users', payload)
 
     // Store only safe user info in the store (do not store password)
     const safeUser = {

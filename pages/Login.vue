@@ -75,7 +75,7 @@ const handleLogin = async (): Promise<void> => {
 
   try {
     // فقط بر اساس ایمیل فیلتر می‌کنیم (json-server اینجا مطمئن کار می‌کند)
-    const res = await axios.get<LoginResponse[]>('http://localhost:3000/users', {
+    const res = await axios.get<LoginResponse[]>('/api/users', {
       params: { email: email.value.trim() }
     })
 

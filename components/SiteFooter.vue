@@ -22,56 +22,42 @@
 
 <style scoped>
 .site-footer {
-  background: rgba(230, 226, 226, 0.95);
+  background: var(--surface);
   border-top: 1px solid var(--border);
-  padding: 40px 20px;
-  margin-top: auto;
+  padding: 2rem 1rem;
 }
 
 .footer-content {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 40px;
-  flex-wrap: wrap;
+  gap: 2rem;
+  max-width: 1280px; /* Ensures consistency with main page content */
+  margin: 0 auto; /* Centers the content */
 }
 
 .link {
-  color: black;
+  color: var(--subtext);
   font-weight: 600;
-  font-size: 0.95rem;
-  position: relative;
-  padding-bottom: 2px;
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-.link::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: var(--primary);
-  transition: width 0.3s;
+.link:hover {
+  color: var(--primary);
 }
-
-.link:hover { color: var(--primary); }
-.link:hover::after { width: 100%; }
 
 .map-icon {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--border);
-  padding: 2px;
-  transition: transform 0.3s, border-color 0.3s;
-  display: block;
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
 .map-icon:hover {
-  transform: scale(1.15) rotate(5deg);
+  transform: scale(1.1);
   border-color: var(--primary);
 }
 </style>

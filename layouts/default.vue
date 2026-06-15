@@ -1,11 +1,9 @@
 <template>
-  <div>
+  <div class="site-wrapper">
     <SiteHeader />
-
-    <main>
+    <main class="main-content-area">
       <NuxtPage />
     </main>
-
     <SiteFooter />
   </div>
 </template>
@@ -15,9 +13,14 @@ import SiteHeader from '~/components/SiteHeader.vue'
 import SiteFooter from '~/components/SiteFooter.vue'
 </script>
 
-
 <style scoped>
-main {
-  min-height: 70vh;
+.site-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content-area {
+  flex-grow: 1;
 }
 </style>

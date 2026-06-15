@@ -1,50 +1,51 @@
 <template>
-  <div class="wishlist-wrapper">
-    <div class="custom-container">
-      <h1 class="page-header">My Wishlist</h1>
+  <div class="page-container">
+    <div class="content-wrapper">
+      <h1 class="page-title">My Wishlist</h1>
 
-      <div v-if="!cartStore.wishlist || cartStore.wishlist.length === 0" class="empty-status">
-        <p>Your wishlist is currently empty.</p>
-        <NuxtLink to="/" class="return-btn">Return to Shop</NuxtLink>
+      <div v-if="!cartStore.wishlist || cartStore.wishlist.length === 0" class="empty-state">
+        <h2>Your wishlist is empty.</h2>
+        <p>Add your favorite products here to keep track of them.</p>
+        <NuxtLink to="/" class="btn btn-primary">Discover Products</NuxtLink>
       </div>
 
-      <div v-else class="products-layout">
-        <div v-for="product in cartStore.wishlist" :key="product.id" class="item-card">
-          
-          <div v-if="product.isSale" class="sale-tag">SALE</div>
+      <div v-else class="products-grid-layout">
+        <div v-for="product in cartStore.wishlist" :key="product.id" class="product-card">
 
-          <div class="image-box">
-            <img :src="product.image" :alt="product.name" />
+          <div class="product-image-container" @click="goToProduct(product.id)">
+            <img :src="product.image" :alt="product.name" class="product-image" />
           </div>
-          
-          <div class="item-details">
-            <h3 class="item-title">{{ product.name }}</h3>
+
+          <div class="card-content">
+            <h3 class="product-name" @click="goToProduct(product.id)">
+              {{ product.name }}
+            </h3>
             
-            <div class="price-section">
-              <template v-if="product.isSale">
-                <span class="item-price old-price">${{ product.price }}</span>
-                <span class="item-price new-price">${{ product.currentPrice }}</span>
+            <div class="price-container">
+              <template v-if="product.flashInfo">
+                <span class="original-price">${{ product.price }}</span>
+                <span class="discounted-price">${{ product.flashInfo.discountPrice }}</span>
               </template>
               <template v-else>
-                <p class="item-price">${{ product.price }}</p>
+                <span class="current-price">${{ product.price }}</span>
               </template>
             </div>
             
-            <div class="action-buttons">
+            <div class="card-actions">
               <button 
                 type="button"
-                @click="cartStore.addToCart(product as any, product.isSale ? product.currentPrice : product.price)" 
-                class="add-btn"
+                @click="addToCartHandler(product)" 
+                class="btn btn-primary"
               >
                 Add to Cart
               </button>
               <button
                 type="button"
                 @click="cartStore.addToWishlist(product)"
-                class="delete-btn"
+                class="btn btn-secondary"
                 title="Remove"
               >
-                Delete
+                Remove
               </button>
             </div>
           </div>
@@ -55,186 +56,143 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '../store/cart.js'
 
 const cartStore = useCartStore()
+const router = useRouter()
 
-onMounted(async (): Promise<void> => {
-  await cartStore.validateCartPrices()
-})
-</script>
-
-
-<style scoped>
-.wishlist-wrapper { 
-  padding: 40px 0; 
-  min-height: 80vh; 
-  background-color: var(--bg); 
+const goToProduct = (id: string | number) => {
+  router.push(`/products/${id}`)
 }
 
-.custom-container { 
+const addToCartHandler = (product: any) => {
+    const price = product.flashInfo ? product.flashInfo.discountPrice : product.price;
+    cartStore.addToCart(
+        { ...product, quantity: 1, priceAtPurchase: price },
+        price
+    );
+}
+</script>
+
+<style scoped>
+/* Using shared styles for consistency */
+.page-container {
+  width: 100vw;
+  min-height: 100vh;
+  padding: 40px 1rem;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.content-wrapper { 
   max-width: 1200px; 
   margin: 0 auto; 
   padding: 0 20px; 
 }
 
-.page-header { 
-  font-size: 1.8rem; 
+.page-title { 
+  font-size: 2.5rem; 
   font-weight: 800; 
-  color: var(--dark); 
+  color: var(--text); 
   margin-bottom: 30px; 
-  border-bottom: 1px solid var(--border); 
-  padding-bottom: 15px; 
+  text-align: center;
 }
 
-.products-layout { 
-  display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
-  gap: 30px; 
+.products-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
 }
 
-.item-card { 
-  position: relative; 
-  background: white; 
-  border: 1px solid transparent; 
-  border-radius: var(--radius); 
-  overflow: hidden; 
-  display: flex; 
-  flex-direction: column; 
-  transition: all 0.3s ease; 
-  box-shadow: var(--shadow); 
+.product-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
-.item-card:hover { 
-  transform: translateY(-5px); 
-  box-shadow: var(--shadow-hover); 
-  border-color: var(--primary); 
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
 }
 
-.image-box { 
-  width: 100%; 
-  height: 200px; 
-  padding: 20px; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-}
-
-.image-box img { 
-  max-width: 100%; 
-  max-height: 100%; 
-  object-fit: contain; 
-}
-
-.item-details { 
-  padding: 20px; 
-  display: flex; 
-  flex-direction: column; 
-  flex-grow: 1; 
-}
-
-.item-title { 
-  font-size: 1rem; 
-  font-weight: 700; 
-  color: var(--dark); 
-  margin-bottom: 10px; 
-  height: 40px; 
-  overflow: hidden; 
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.item-price { 
-  font-size: 1.2rem; 
-  font-weight: 800; 
-  color: var(--primary); 
-  margin-bottom: 20px; 
-}
-
-.action-buttons { 
-  display: flex; 
-  gap: 10px; 
-  margin-top: auto; 
-}
-
-.add-btn { 
-  flex: 2; 
-  padding: 10px; 
-  background: var(--dark); 
-  color: white; 
-  border: none; 
-  border-radius: 8px; 
-  font-weight: 600; 
-  transition: 0.2s;
+.product-image-container {
+  width: 100%;
+  padding-top: 100%;
+  position: relative;
   cursor: pointer;
+  background-color: var(--bg);
 }
 
-.add-btn:hover { 
-  background: var(--primary); 
+.product-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 1rem;
 }
 
-.delete-btn { 
-  flex: 1; 
-  padding: 10px; 
-  background: white; 
-  color: var(--danger); 
-  border: 1px solid var(--border); 
-  border-radius: 8px; 
-  font-weight: 600; 
-  transition: 0.2s;
+.card-content {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.product-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
   cursor: pointer;
+  flex-grow: 1;
 }
 
-.delete-btn:hover { 
-  background: #fee2e2; 
-  border-color: var(--danger); 
+.price-container {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-.empty-status { 
+.current-price, .discounted-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: var(--subtext);
+  font-size: 0.9rem;
+}
+
+.card-actions {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.empty-state { 
   text-align: center; 
   padding: 80px 0; 
+  background-color: var(--surface);
+  border-radius: var(--radius);
 }
-
-.return-btn { 
-  display: inline-block; 
-  margin-top: 20px; 
-  padding: 12px 25px; 
-  background: var(--primary); 
-  color: white; 
-  border-radius: 8px; 
-  font-weight: 600; 
-  text-decoration: none; 
-}
-
-.price-section { 
-  display: flex; 
-  align-items: center; 
-  gap: 10px; 
-}
-
-.old-price { 
-  text-decoration: line-through; 
-  color: #999; 
-  font-size: 1rem; 
-}
-
-.new-price { 
-  color: var(--danger); 
-}
-
-.sale-tag { 
-  position: absolute; 
-  top: 10px; 
-  left: 10px; 
-  background: var(--danger); 
-  color: white; 
-  padding: 4px 10px; 
-  border-radius: 4px; 
-  font-size: 0.75rem; 
-  font-weight: bold; 
-  z-index: 2; 
-}
+.empty-state h2 { font-size: 1.8rem; margin-bottom: 10px; }
+.empty-state p { margin-bottom: 20px; color: var(--subtext); }
 </style>

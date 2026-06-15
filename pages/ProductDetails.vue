@@ -192,8 +192,8 @@ const loadProduct = async (): Promise<void> => {
     }
 
     const [pRes, fRes] = await Promise.all([
-      axios.get<Product>(`http://localhost:3000/products/${productId.value}`),
-      axios.get<FlashSale[]>('http://localhost:3000/flashSale')
+      axios.get<Product>(`/api/products/${productId.value}`),
+      axios.get<FlashSale[]>('/api/flashSale')
     ])
 
     product.value = pRes.data
@@ -219,7 +219,7 @@ const loadProduct = async (): Promise<void> => {
 
     // Load related products
     if (product.value) {
-      const allProducts = await axios.get<Product[]>('http://localhost:3000/products')
+      const allProducts = await axios.get<Product[]>('/api/products')
       relatedProducts.value = allProducts.data
         .filter((p: Product) => p.category === product.value!.category && String(p.id) !== String(product.value!.id))
         .slice(0, 4)

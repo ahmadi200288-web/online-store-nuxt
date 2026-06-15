@@ -1,9 +1,7 @@
 <template>
-  <div class="products-page">
+  <div class="products-page-container">
     <div class="header-section">
-      <h2 class="category-title">
-        mobile / samsung
-      </h2>
+      <h1 class="page-title">Dell Laptops</h1>
     </div>
 
     <div v-if="loading" class="loading-state">
@@ -11,57 +9,51 @@
       <p>Loading products...</p>
     </div>
 
-    <div v-else-if="filteredProducts.length > 0" class="products-grid">
+    <div v-else-if="filteredProducts.length" class="products-grid">
       <div v-for="product in filteredProducts" :key="product.id" class="product-card">
-        
-        <div v-if="product.flashInfo" class="sale-badge">
-          SALE | {{ product.flashInfo.timeLeft }}
-        </div>
+
+        <div v-if="product.flashInfo" class="sale-badge">⚡️ SALE</div>
 
         <button class="wishlist-btn" @click.stop="toggleWishlist(product)">
           {{ isInWishlist(product.id) ? '❤️' : '🤍' }}
         </button>
 
-        <div class="img-wrapper" @click="goToProduct(product.id)">
-          <img :src="product.image" :alt="product.name" />
+        <div class="product-image-container" @click="goToProduct(product.id)">
+          <img :src="product.image" :alt="product.name" class="product-image" />
         </div>
 
-        <div class="card-info">
-          <h3 class="name" @click="goToProduct(product.id)">
-            {{ product.name }}
-          </h3>
-          
-          <div class="price-box">
+        <div class="card-content">
+          <h3 class="product-name" @click="goToProduct(product.id)">{{ product.name }}</h3>
+
+          <div class="price-container">
             <template v-if="product.flashInfo">
-              <span class="old-price">${{ product.price }}</span>
-              <span class="new-price">${{ product.flashInfo.discountPrice }}</span>
+              <span class="original-price">${{ product.price }}</span>
+              <span class="discounted-price">${{ product.flashInfo.discountPrice }}</span>
             </template>
             <template v-else>
-              <span class="new-price">${{ product.price }}</span>
+              <span class="current-price">${{ product.price }}</span>
             </template>
           </div>
 
-          <div class="actions">
-            <button class="add-btn" @click="addToCartHandler(product)">
-              Add to Cart
-            </button>
-            <button class="details-btn" @click="goToProduct(product.id)">
-              View
-            </button>
+          <div class="card-actions">
+            <button class="btn btn-primary" @click="addToCartHandler(product)">Add to Cart</button>
+            <button class="btn btn-secondary" @click="goToProduct(product.id)">Details</button>
           </div>
         </div>
+
       </div>
     </div>
-
+    
     <div v-else class="empty-state">
-      <p>No products found.</p>
-      <button @click="router.push('/')" class="home-btn">Return Home</button>
+        <h2>No products found</h2>
+        <p>This category is currently empty.</p>
+        <button @click="router.push('/')" class="btn btn-primary">Return Home</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, onUnmounted } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useCartStore } from '~/store/cart'
@@ -69,7 +61,6 @@ import { useCartStore } from '~/store/cart'
 const router = useRouter()
 const cartStore = useCartStore()
 
-// ثابت‌ها
 const category = 'laptop'
 const brand = 'dell'
 
@@ -82,14 +73,12 @@ const loadAllData = async () => {
   loading.value = true
   try {
     const [pRes, fRes] = await Promise.all([
-      axios.get("http://localhost:3000/products"),
-      axios.get("http://localhost:3000/flashSale")
+      axios.get("/api/products"),
+      axios.get("/api/flashSale")
     ])
     allProducts.value = pRes.data
     flashSales.value = fRes.data
     startTimer()
-  } catch (err) {
-    console.error(err)
   } finally {
     loading.value = false
   }
@@ -97,11 +86,7 @@ const loadAllData = async () => {
 
 const filteredProducts = computed(() => {
   return allProducts.value
-    .filter((p: any) => {
-      const cMatch = String(p.category).toLowerCase() === category
-      const bMatch = String(p.brand).toLowerCase() === brand
-      return cMatch && bMatch
-    })
+    .filter((p: any) => String(p.category).toLowerCase() === category && String(p.brand).toLowerCase() === brand)
     .map((p: any) => {
       const flash = flashSales.value.find((f: any) => String(f.productId) === String(p.id))
       return { ...p, flashInfo: flash || null }
@@ -112,216 +97,110 @@ const startTimer = () => {
   if (timer) clearInterval(timer)
   timer = setInterval(() => {
     const now = Date.now()
-
-    flashSales.value = flashSales.value.filter((item: any) => {
-      const dist = item.endTime - now
-
-      if (dist < 0) return false
-
-      const h = Math.floor(dist / 3600000)
-      const m = Math.floor((dist % 3600000) / 60000)
-      const s = Math.floor((dist % 60000) / 1000)
-      item.timeLeft = `${h}:${m}:${s}`
-
-      return true
-    })
+    flashSales.value = flashSales.value.map(item => {
+        const dist = item.endTime - now
+        if (dist < 0) return { ...item, timeLeft: 'Ended' }
+        const h = String(Math.floor(dist / 3600000)).padStart(2, '0')
+        const m = String(Math.floor((dist % 3600000) / 60000)).padStart(2, '0')
+        const s = String(Math.floor((dist % 60000) / 1000)).padStart(2, '0')
+        return { ...item, timeLeft: `${h}:${m}:${s}` }
+    }).filter(item => item.timeLeft !== 'Ended');
   }, 1000)
 }
 
-const goToProduct = (id: string | number) => {
-  router.push(`/products/${id}`)
-}
+const goToProduct = (id: string | number) => router.push(`/products/${id}`)
+const isInWishlist = (id: string | number) => cartStore.isInWishlist(id)
 
-const isInWishlist = (productId: string | number) => {
-  return cartStore.isInWishlist(productId)
-}
+const toggleWishlist = (p: any) => cartStore.addToWishlist(p)
 
-const toggleWishlist = (product: any) => {
-  cartStore.addToWishlist({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    image: product.image,
-    category: product.category,
-    brand: product.brand
-  })
-}
-
-const addToCartHandler = (product: any) => {
-  const price = product.flashInfo ? product.flashInfo.discountPrice : product.price
+const addToCartHandler = (p: any) => {
+  const price = p.flashInfo ? p.flashInfo.discountPrice : p.price
   cartStore.addToCart(
-    {
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1,
-      priceAtPurchase: price
-    },
+    { ...p, quantity: 1, priceAtPurchase: price },
     price
   )
-  alert(`${product.name} به سبد خرید اضافه شد!`)
 }
 
-onMounted(() => loadAllData())
-
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-})
+onMounted(loadAllData)
+onUnmounted(() => timer && clearInterval(timer))
 </script>
 
 <style scoped>
-.products-page {
-  padding: 40px 5%;
-  min-height: 80vh;
+.products-page-container {
+  padding: 40px 1rem;
 }
 
-.header-section {
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 30px;
-  padding-bottom: 10px;
-}
-
-.category-title {
-  text-transform: uppercase;
-  color: var(--dark);
-  font-size: 1.8rem;
-  font-weight: 800;
-}
+.header-section { margin-bottom: 25px; text-align: center; }
+.page-title { font-size: 2.5rem; font-weight: 800; color: var(--text); }
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .product-card {
-  background: white;
-  border: 1px solid transparent;
+  background: var(--surface);
   border-radius: var(--radius);
-  padding: 20px;
-  position: relative;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-hover);
-  border-color: var(--primary);
-}
+.product-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
 
-.img-wrapper {
-  width: 100%;
-  height: 200px;
-  cursor: pointer;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.img-wrapper img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  transition: 0.3s;
-}
-.product-card:hover .img-wrapper img { transform: scale(1.05); }
+.product-image-container { width: 100%; padding-top: 100%; position: relative; cursor: pointer; }
+.product-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; padding: 1rem; }
 
 .sale-badge {
   position: absolute;
-  top: 15px;
-  left: 15px;
-  background: var(--danger);
+  top: 12px;
+  left: 12px;
+  background-color: var(--danger);
   color: white;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  z-index: 2;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 700;
+  z-index: 1;
 }
 
 .wishlist-btn {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid var(--border);
-  background: white;
-  width: 32px;
-  height: 32px;
   border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   cursor: pointer;
   font-size: 1.2rem;
-  transition: 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  padding: 0;
+  z-index: 1;
 }
 
-.wishlist-btn:hover {
-  border-color: var(--danger);
-  background: rgba(239, 68, 68, 0.1);
-}
+.wishlist-btn:hover { background: white; }
 
-.card-info { flex-grow: 1; display: flex; flex-direction: column; }
-
-.name {
-  font-size: 1rem;
-  margin: 0 0 10px 0;
-  cursor: pointer;
-  color: var(--dark);
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.price-box { margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-.new-price { font-size: 1.25rem; font-weight: 800; color: var(--primary); }
-.old-price { text-decoration: line-through; color: var(--light); font-size: 0.9rem; }
-
-.actions { display: flex; gap: 10px; margin-top: auto; }
-
-.add-btn {
-  flex: 2;
-  background: var(--dark);
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: 0.3s;
-}
-.add-btn:hover { background: var(--primary); }
-
-.details-btn {
-  flex: 1;
-  background: var(--bg);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--dark);
-  font-weight: 600;
-  transition: 0.3s;
-}
-.details-btn:hover { background: var(--border); }
+.card-content { padding: 18px; display: flex; flex-direction: column; flex-grow: 1; }
+.product-name { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 12px; cursor: pointer; flex-grow: 1; }
+.price-container { display: flex; align-items: baseline; gap: 8px; margin-bottom: 16px; }
+.current-price, .discounted-price { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+.original-price { text-decoration: line-through; color: var(--subtext); font-size: 0.9rem; }
+.card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
 
 .loading-state, .empty-state { text-align: center; padding: 100px 0; }
 .spinner { width: 40px; height: 40px; border: 4px solid #eee; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.home-btn { 
-  padding: 10px 20px; 
-  background: var(--primary); 
-  color: white; 
-  border: none; 
-  border-radius: 8px;
-  cursor: pointer;
-}
+.empty-state h2 { font-size: 1.8rem; margin-bottom: 10px; }
+.empty-state p { margin-bottom: 20px; color: var(--subtext); }
 </style>

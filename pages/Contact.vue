@@ -99,7 +99,7 @@ const handleSubmit = async (): Promise<void> => {
 
   try {
     // تغییر آدرس به endpoint واقعی در صورت نیاز
-    await axios.post('http://localhost:3000/contacts', {
+    await axios.post('/api/contacts', {
       name: form.value.name,
       email: form.value.email,
       message: form.value.message,

@@ -126,7 +126,7 @@ export const useCartStore = defineStore("cart", {
       const userId = String(user.id);
 
       try {
-        const res = await axios.get(`http://localhost:3000/carts/${userId}`);
+        const res = await axios.get(`/api/carts/${userId}`);
         if (res.data) {
           this.items = res.data.items || [];
           this.wishlist = res.data.wishlist || [];
@@ -143,8 +143,8 @@ export const useCartStore = defineStore("cart", {
     async validateCartPrices() {
       try {
         const [flashRes, prodRes] = await Promise.all([
-          axios.get("http://localhost:3000/flashSale"),
-          axios.get("http://localhost:3000/products")
+          axios.get("/api/flashSale"),
+          axios.get("/api/products")
         ]);
 
         const flashSales: FlashSaleItem[] = flashRes.data;
@@ -210,11 +210,11 @@ export const useCartStore = defineStore("cart", {
       };
 
       try {
-        await axios.put(`http://localhost:3000/carts/${userId}`, cartData);
+        await axios.put(`/api/carts/${userId}`, cartData);
       } catch (error) {
         const axiosError = error as AxiosError;
         if (axiosError.response?.status === 404) {
-          await axios.post(`http://localhost:3000/carts`, cartData);
+          await axios.post(`/api/carts`, cartData);
         }
       }
     }

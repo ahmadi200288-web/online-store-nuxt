@@ -1,3 +1,4 @@
+
 <template>
   <div class="home-page">
     <!-- Hero Slider -->
@@ -21,60 +22,89 @@
     </section>
 
     <!-- Flash Sales Section -->
-    <section v-if="flashSaleProducts.length > 0" class="flash-sales">
-      <h2>Flash Sales</h2>
-      <div class="flash-grid">
-        <div v-for="product in flashSaleProducts" :key="product.id" class="flash-card">
-          <div class="time-badge">⏱ {{ product.flashInfo?.timeLeft }}</div>
+    <div v-if="flashSaleProducts.length > 0" class="content-section">
+      <h2 class="section-title">⚡️ Flash Sales</h2>
+      <div class="products-grid-layout">
+        <div v-for="product in flashSaleProducts" :key="product.id" class="product-card">
 
-          <button class="wishlist-btn-flash" @click.stop="toggleFlashWishlist(product)">
+          <div class="sale-badge">⏱ {{ product.flashInfo?.timeLeft }}</div>
+
+          <button class="wishlist-btn" @click.stop="toggleWishlist(product)">
             {{ isInWishlist(product.id) ? '❤️' : '🤍' }}
           </button>
 
-          <img
-            :src="product.image"
-            :alt="product.name"
-            @click="goToProduct(product.id)"
-          />
+          <div class="product-image-container" @click="goToProduct(product.id)">
+            <img :src="product.image" :alt="product.name" class="product-image" />
+          </div>
 
-          <div class="flash-info">
-            <h3>{{ product.name }}</h3>
-            <div class="prices">
-              <span class="old-price">${{ product.price }}</span>
-              <span class="sale-price">${{ product.flashInfo?.discountPrice }}</span>
+          <div class="card-content">
+            <h3 class="product-name" @click="goToProduct(product.id)">
+              {{ product.name }}
+            </h3>
+
+            <div class="price-container">
+                <span class="original-price">${{ product.price }}</span>
+                <span class="discounted-price">${{ product.flashInfo.discountPrice }}</span>
             </div>
-            <button @click="addFlashToCart(product)" class="buy-btn">Buy Now</button>
+
+            <div class="card-actions">
+              <button class="btn btn-primary" @click="addToCart(product)">
+                Add to Cart
+              </button>
+              <button class="btn btn-secondary" @click="goToProduct(product.id)">
+                Details
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- New Arrival Products -->
-    <section class="new-arrivals">
-      <h2>New Arrivals</h2>
-      <div class="products-grid">
+    <div class="content-section">
+      <h2 class="section-title">New Arrivals</h2>
+      <div class="products-grid-layout">
         <div v-for="product in newArrivalProducts" :key="product.id" class="product-card">
-          <button class="wishlist-btn" @click.stop="toggleNewArrivalWishlist(product)">
+          
+          <div v-if="product.flashInfo" class="sale-badge">⚡️ SALE</div>
+
+          <button class="wishlist-btn" @click.stop="toggleWishlist(product)">
             {{ isInWishlist(product.id) ? '❤️' : '🤍' }}
           </button>
 
-          <img
-            :src="product.image"
-            :alt="product.name"
-            @click="goToProduct(product.id)"
-          />
+          <div class="product-image-container" @click="goToProduct(product.id)">
+            <img :src="product.image" :alt="product.name" class="product-image" />
+          </div>
 
-          <h3 @click="goToProduct(product.id)">{{ product.name }}</h3>
+          <div class="card-content">
+            <h3 class="product-name" @click="goToProduct(product.id)">
+              {{ product.name }}
+            </h3>
+            
+            <p class="product-brand">{{ product.brand }}</p>
 
-          <p class="brand">{{ product.brand }}</p>
-          <span class="price">${{ product.price }}</span>
+            <div class="price-container">
+              <template v-if="product.flashInfo">
+                <span class="original-price">${{ product.price }}</span>
+                <span class="discounted-price">${{ product.flashInfo.discountPrice }}</span>
+              </template>
+              <template v-else>
+                <span class="current-price">${{ product.price }}</span>
+              </template>
+            </div>
 
-          <button @click="addProductToCart(product)" class="add-btn">
-            Add to Cart
-          </button>
+            <div class="card-actions">
+              <button class="btn btn-primary" @click="addToCart(product)">
+                Add to Cart
+              </button>
+               <button class="btn btn-secondary" @click="goToProduct(product.id)">
+                Details
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 
@@ -88,34 +118,10 @@ const router = useRouter()
 const cartStore = useCartStore()
 
 /* ------------------ Interfaces ------------------ */
-interface Slide {
-  id: string | number
-  title: string
-  image: string
-  link?: string
-}
-
-interface FlashSale {
-  id: string | number
-  productId: string | number
-  discountPrice: number
-  endTime: number
-  timeLeft?: string
-}
-
-interface Product {
-  id: string | number
-  name: string
-  image: string
-  price: number
-  category: string
-  brand: string
-  [key: string]: any
-}
-
-interface FlashSaleProduct extends Product {
-  flashInfo: FlashSale
-}
+interface Slide { id: string | number; title: string; image: string; link?: string; }
+interface FlashSale { id: string | number; productId: string | number; discountPrice: number; endTime: number; timeLeft?: string; }
+interface Product { id: string | number; name: string; image: string; price: number; category: string; brand: string; [key: string]: any; }
+interface ProductWithFlash extends Product { flashInfo: FlashSale | null; }
 
 /* ------------------ State ------------------ */
 const slides = ref<Slide[]>([])
@@ -132,82 +138,53 @@ const flashSaleProducts = computed(() => {
   return allProducts.value
     .map((p) => {
       const flash = flashSales.value.find(f => String(f.productId) === String(p.id))
-      if (flash && flash.endTime > now) {
-        return { ...p, flashInfo: flash }
-      }
+      if (flash && flash.endTime > now) return { ...p, flashInfo: flash }
       return null
     })
-    .filter(Boolean) as FlashSaleProduct[]
+    .filter(Boolean) as ProductWithFlash[]
 })
 
-const newArrivalProducts = computed(() => allProducts.value.slice(0, 4))
+const newArrivalProducts = computed(() => {
+  const now = Date.now();
+  return allProducts.value.slice(0, 4).map(p => {
+    const flash = flashSales.value.find(f => String(f.productId) === String(p.id) && f.endTime > now);
+    return { ...p, flashInfo: flash || null };
+  }) as ProductWithFlash[];
+})
 
 /* ------------------ Navigation ------------------ */
-const goToProduct = (id: string | number) => {
-  router.push(`/products/${id}`)
-}
+const goToProduct = (id: string | number) => router.push(`/products/${id}`)
 
 /* ------------------ Wishlist ------------------ */
 const isInWishlist = (id: string | number) => cartStore.isInWishlist(id)
+const toggleWishlist = (p: ProductWithFlash) => cartStore.addToWishlist(p)
 
-const toggleFlashWishlist = (p: FlashSaleProduct) => {
-  cartStore.addToWishlist(p)
-}
-
-const toggleNewArrivalWishlist = (p: Product) => {
-  cartStore.addToWishlist(p)
-}
 
 /* ------------------ Load Data ------------------ */
 const loadData = async () => {
   try {
     const [sRes, pRes, fRes] = await Promise.all([
-      axios.get('http://localhost:3000/slides'),
-      axios.get('http://localhost:3000/products'),
-      axios.get('http://localhost:3000/flashSale')
+      axios.get('/api/slides'),
+      axios.get('/api/products'),
+      axios.get('/api/flashSale')
     ])
-
     slides.value = sRes.data
     allProducts.value = pRes.data
     flashSales.value = fRes.data
-
     startFlashTimer()
-  } catch (err) {
-    console.error('Error loading data:', err)
-  }
+  } catch (err) { console.error('Error loading data:', err) }
 }
 
 /* ------------------ Cart ------------------ */
-const addFlashToCart = (p: FlashSaleProduct) => {
-  cartStore.addToCart(
-    { ...p, quantity: 1 },
-    p.flashInfo.discountPrice
-  )
-}
-
-const addProductToCart = (p: Product) => {
-  cartStore.addToCart(
-    { ...p, quantity: 1 },
-    p.price
-  )
+const addToCart = (p: ProductWithFlash) => {
+  const price = p.flashInfo ? p.flashInfo.discountPrice : p.price;
+  cartStore.addToCart({ ...p, quantity: 1, priceAtPurchase: price }, price);
 }
 
 /* ------------------ Slider ------------------ */
-const nextSlide = () => {
-  if (slides.value.length === 0) return
-  currentSlide.value = (currentSlide.value + 1) % slides.value.length
-}
-
-const prevSlide = () => {
-  if (slides.value.length === 0) return
-  currentSlide.value =
-    (currentSlide.value - 1 + slides.value.length) % slides.value.length
-}
-
-const startSliderTimer = () => {
-  if (sliderTimer) clearInterval(sliderTimer)
-  sliderTimer = setInterval(nextSlide, 5000)
-}
+const nextSlide = () => { if (slides.value.length === 0) return; currentSlide.value = (currentSlide.value + 1) % slides.value.length; }
+const prevSlide = () => { if (slides.value.length === 0) return; currentSlide.value = (currentSlide.value - 1 + slides.value.length) % slides.value.length; }
+const startSliderTimer = () => { if (sliderTimer) clearInterval(sliderTimer); sliderTimer = setInterval(nextSlide, 5000); }
 
 /* ------------------ Flash Timer ------------------ */
 const startFlashTimer = () => {
@@ -217,402 +194,91 @@ const startFlashTimer = () => {
     flashSales.value = flashSales.value.map((sale) => {
       const dist = sale.endTime - now
       if (dist > 0) {
-        const h = Math.floor(dist / 3600000)
-        const m = Math.floor((dist % 3600000) / 60000)
-        const s = Math.floor((dist % 60000) / 1000)
+        const h = String(Math.floor(dist / 3600000)).padStart(2, '0')
+        const m = String(Math.floor((dist % 3600000) / 60000)).padStart(2, '0')
+        const s = String(Math.floor((dist % 60000) / 1000)).padStart(2, '0')
         sale.timeLeft = `${h}:${m}:${s}`
       }
       return sale
-    })
+    }).filter(sale => sale.endTime > now)
   }, 1000)
 }
 
 /* ------------------ Lifecycle ------------------ */
-onMounted(() => {
-  loadData()
-  startSliderTimer()
-})
-
-onUnmounted(() => {
-  if (sliderTimer) clearInterval(sliderTimer)
-  if (flashTimer) clearInterval(flashTimer)
-})
+onMounted(() => { loadData(); startSliderTimer(); })
+onUnmounted(() => { if (sliderTimer) clearInterval(sliderTimer); if (flashTimer) clearInterval(flashTimer); })
 </script>
 
-
-
 <style scoped>
-.home-page {
+.home-page { width: 100%; }
+
+.content-section {
   width: 100%;
+  padding: 40px 2rem;
+  box-sizing: border-box;
 }
 
-/* Hero Slider */
+.section-title { font-size: 2.2rem; font-weight: 800; color: var(--text); margin-bottom: 25px; text-align: center; }
+
+/* Full-width Hero Slider */
 .hero-slider {
   width: 100%;
-  height: 500px;
-  position: relative;
-  overflow: hidden;
-  background: var(--bg);
-  margin-bottom: 50px;
+  height: 500px; 
+  position: relative; 
+  overflow: hidden; 
+  background: #000; 
+  margin-bottom: 2rem; 
 }
+.slider-container { position: relative; width: 100%; height: 100%; }
+.slide { position: absolute; width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s ease-in-out; }
+.slide.active { opacity: 1; }
+.slide img { width: 100%; height: 100%; object-fit: cover; }
+.slide-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center; z-index: 2; }
+.slide-content h1 { font-size: 3rem; font-weight: 800; margin-bottom: 20px; text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6); }
+.cta-btn { display: inline-block; padding: 12px 30px; background: var(--primary); color: white; border-radius: var(--radius); text-decoration: none; font-weight: 600; transition: all 0.3s ease; }
+.cta-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.7); border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; z-index: 3; }
+.nav-btn:hover { background: white; }
+.nav-btn.prev { left: 20px; }
+.nav-btn.next { right: 20px; }
 
-.slider-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.slide {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-}
-
-.slide.active {
-  opacity: 1;
-}
-
-.slide img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.slide-content {
-  position: absolute;
-  top: 50%;
-  left: 5%;
-  transform: translateY(-50%);
-  color: white;
-  max-width: 500px;
-  z-index: 2;
-}
-
-.slide-content h1 {
-  font-size: 3rem;
-  font-weight: 800;
-  margin-bottom: 20px;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
-}
-
-.cta-btn {
-  display: inline-block;
-  padding: 12px 30px;
-  background: var(--primary);
-  color: white;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.cta-btn:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px);
-}
-
-.nav-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.8);
-  border: none;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  font-size: 1.5rem;
-  cursor: pointer;
-  z-index: 3;
-  transition: all 0.3s ease;
-}
-
-.nav-btn:hover {
-  background: white;
-  transform: translateY(-50%) scale(1.1);
-}
-
-.nav-btn.prev {
-  left: 20px;
-}
-
-.nav-btn.next {
-  right: 20px;
-}
-
-/* Flash Sales */
-.flash-sales {
-  padding: 40px 5%;
-  background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
-  margin-bottom: 50px;
-}
-
-.flash-sales h2 {
-  font-size: 2rem;
-  margin-bottom: 30px;
-  color: var(--dark);
-  font-weight: 800;
-  max-width: 1400px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 5%;
-}
-
-.flash-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 5%;
-}
-
-.flash-card {
-  flex: 1 1 calc(25% - 15px);
-  min-width: 180px;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow);
-}
-
-.flash-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--shadow-hover);
-}
-
-.time-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: var(--danger);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  z-index: 2;
-}
-
-.wishlist-btn-flash {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  border: 1px solid var(--border);
-  background: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  padding: 0;
-}
-
-.wishlist-btn-flash:hover {
-  border-color: var(--danger);
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.flash-card img {
-  width: 100%;
-  height: 200px;
-  object-fit: contain;
-  cursor: pointer;
-  padding: 10px;
-  background: var(--bg);
-}
-
-.flash-info {
-  padding: 15px;
-}
-
-.flash-info h3 {
-  font-size: 0.95rem;
-  margin-bottom: 8px;
-  color: var(--dark);
-  font-weight: 700;
-}
-
-.prices {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.old-price {
-  text-decoration: line-through;
-  color: var(--light);
-  font-size: 0.9rem;
-}
-
-.sale-price {
-  color: var(--danger);
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.buy-btn {
-  width: 100%;
-  padding: 8px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.buy-btn:hover {
-  background: var(--primary-dark);
-}
-
-/* New Arrivals */
-.new-arrivals {
-  padding: 40px 5%;
-}
-
-.new-arrivals h2 {
-  font-size: 2rem;
-  margin-bottom: 30px;
-  color: var(--dark);
-  font-weight: 800;
-  max-width: 1400px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.products-grid {
-  display: flex;
-  flex-wrap: wrap;
+/* Grids & Cards */
+.products-grid-layout { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
   gap: 25px;
-  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
+  max-width: 1280px; /* Adding a max-width for large screens */
 }
+.product-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: column; position: relative; }
+.product-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+.product-image-container { width: 100%; padding-top: 100%; position: relative; cursor: pointer; background-color: var(--bg); }
+.product-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; padding: 1rem; }
+.sale-badge { position: absolute; top: 12px; left: 12px; background-color: var(--danger); color: white; padding: 6px 10px; border-radius: var(--radius); font-size: 0.8rem; font-weight: 700; z-index: 1; }
+.wishlist-btn { position: absolute; top: 12px; right: 12px; background: rgba(255, 255, 255, 0.8); border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 1.2rem; z-index: 1; }
+.wishlist-btn:hover { background: white; }
+.card-content { padding: 18px; display: flex; flex-direction: column; flex-grow: 1; }
+.product-name { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 8px; cursor: pointer; }
+.product-brand { font-size: 0.9rem; color: var(--subtext); margin-bottom: 12px; }
+.price-container { display: flex; align-items: baseline; gap: 8px; margin-bottom: 16px; flex-grow: 1; align-items: flex-end; }
+.current-price, .discounted-price { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+.original-price { text-decoration: line-through; color: var(--subtext); font-size: 0.9rem; }
+.card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-primary { background-color: var(--primary); color: white; }
+.btn-secondary { background-color: transparent; border: 1px solid var(--border); color: var(--subtext); }
 
-.product-card {
-  flex: 1 1 calc(25% - 19px);
-  min-width: 180px;
-  background: white;
-  border-radius: 12px;
-  padding: 15px;
-  position: relative;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow);
-  text-align: center;
-}
-
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-hover);
-}
-
-.wishlist-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: white;
-  border: 1px solid var(--border);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  padding: 0;
-}
-
-.wishlist-btn:hover {
-  border-color: var(--danger);
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.product-card img {
-  width: 100%;
-  height: 150px;
-  object-fit: contain;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-.product-card h3 {
-  font-size: 0.95rem;
-  margin: 0 0 5px 0;
-  color: var(--dark);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.brand {
-  font-size: 0.8rem;
-  color: var(--light);
-  margin-bottom: 8px;
-}
-
-.price {
-  display: block;
-  font-size: 1.2rem;
-  color: var(--primary);
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-
-.add-btn {
-  width: 100%;
-  padding: 10px;
-  background: var(--dark);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.add-btn:hover {
-  background: var(--primary);
-}
-
-@media (max-width: 1200px) {
-  .flash-card {
-    flex: 1 1 calc(33.333% - 14px);
-  }
-  .product-card {
-    flex: 1 1 calc(33.333% - 17px);
-  }
-}
-
+/* Responsive Design */
+@media (max-width: 1024px) { .hero-slider { height: 400px; } }
 @media (max-width: 768px) {
-  .flash-card {
-    flex: 1 1 calc(50% - 10px);
-  }
-  .product-card {
-    flex: 1 1 calc(50% - 12.5px);
-  }
-
-  .slide-content h1 {
-    font-size: 1.8rem;
-  }
+  .hero-slider { height: 300px; }
+  .slide-content h1 { font-size: 1.8rem; }
+  .section-title { font-size: 1.8rem; }
 }
-
 @media (max-width: 480px) {
-  .flash-card {
-    flex: 1 1 100%;
-  }
-  .product-card {
-    flex: 1 1 100%;
-  }
+  .hero-slider { height: 220px; }
+  .slide-content h1 { font-size: 1.3rem; }
+  .cta-btn { padding: 8px 20px; font-size: 0.9rem; }
 }
+
 </style>

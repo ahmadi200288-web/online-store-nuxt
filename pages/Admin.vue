@@ -301,9 +301,9 @@ const newSlide = ref<NewSlide>({
 const loadData = async (): Promise<void> => {
   try {
     const [pRes, fRes, sRes] = await Promise.all([
-      axios.get<Product[]>('http://localhost:3000/products'),
-      axios.get<FlashSale[]>('http://localhost:3000/flashSale'),
-      axios.get<Slide[]>('http://localhost:3000/slides')
+      axios.get<Product[]>('/api/products'),
+      axios.get<FlashSale[]>('/api/flashSale'),
+      axios.get<Slide[]>('/api/slides')
     ]);
     products.value = pRes.data;
     flashSales.value = fRes.data;
@@ -315,7 +315,7 @@ const loadData = async (): Promise<void> => {
 
 const addProduct = async (): Promise<void> => {
   try {
-    await axios.post('http://localhost:3000/products', newProduct.value);
+    await axios.post('/api/products', newProduct.value);
     await loadData();
     showAddProduct.value = false;
     newProduct.value = {
@@ -336,7 +336,7 @@ const addProduct = async (): Promise<void> => {
 const deleteProduct = async (id: string | number): Promise<void> => {
   if (!confirm('آیا مطمئن هستید؟')) return;
   try {
-    await axios.delete(`http://localhost:3000/products/${id}`);
+    await axios.delete(`/api/products/${id}`);
     await loadData();
     alert('محصول حذف شد!');
   } catch (error) {
@@ -418,7 +418,7 @@ const addFlashSale = async (): Promise<void> => {
 
   try {
     const endTime = Date.now() + (newFlash.value.duration * 3600000);
-    await axios.post('http://localhost:3000/flashSale', {
+    await axios.post('/api/flashSale', {
       productId: newFlash.value.productId,
       discountPrice: newFlash.value.discountPrice,
       endTime: endTime
@@ -438,7 +438,7 @@ const addFlashSale = async (): Promise<void> => {
 const deleteFlashSale = async (id: string | number): Promise<void> => {
   if (!confirm('آیا مطمئن هستید؟')) return;
   try {
-    await axios.delete(`http://localhost:3000/flashSale/${id}`);
+    await axios.delete(`/api/flashSale/${id}`);
     await loadData();
     alert('فلش سیل حذف شد!');
   } catch (error) {
@@ -448,7 +448,7 @@ const deleteFlashSale = async (id: string | number): Promise<void> => {
 
 const addSlide = async (): Promise<void> => {
   try {
-    await axios.post('http://localhost:3000/slides', newSlide.value);
+    await axios.post('/api/slides', newSlide.value);
     await loadData();
     showAddSlide.value = false;
     newSlide.value = { title: '', image: '', link: '' };
@@ -462,7 +462,7 @@ const addSlide = async (): Promise<void> => {
 const deleteSlide = async (id: string | number): Promise<void> => {
   if (!confirm('آیا مطمئن هستید؟')) return;
   try {
-    await axios.delete(`http://localhost:3000/slides/${id}`);
+    await axios.delete(`/api/slides/${id}`);
     await loadData();
     alert('اسلاید حذف شد!');
   } catch (error) {

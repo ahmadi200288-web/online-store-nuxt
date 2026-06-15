@@ -1,68 +1,70 @@
 <template>
-  <div class="products-page">
+  <div class="product-page-container">
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>Loading product...</p>
     </div>
 
-    <div v-else-if="product" class="single-product">
+    <div v-else-if="product" class="product-details-layout">
 
-      <!-- Image -->
-      <div class="single-img-wrapper">
+      <!-- Left: Image -->
+      <div class="product-image-card">
         <img :src="product.image" :alt="product.name" />
       </div>
 
-      <!-- Info -->
-      <div class="single-info">
+      <!-- Right: Info -->
+      <div class="product-info-card">
 
-        <h2 class="single-name">{{ product.name }}</h2>
+        <h1 class="product-name">{{ product.name }}</h1>
 
-        <p class="single-meta">
-          Category: <strong>{{ product.category }}</strong> |
-          Brand: <strong>{{ product.brand }}</strong>
+        <p class="product-meta">
+          <span>Category: <strong>{{ product.category }}</strong></span>
+          <span class="meta-divider">|</span>
+          <span>Brand: <strong>{{ product.brand }}</strong></span>
         </p>
 
         <!-- Flash Sale -->
-        <div v-if="product.flashInfo" class="sale-badge single-sale">
-          SALE | {{ product.flashInfo.timeLeft }}
+        <div v-if="product.flashInfo" class="flash-sale-badge">
+          ⚡️ Flash Sale | Ends in: {{ product.flashInfo.timeLeft }}
         </div>
 
         <!-- Prices -->
-        <div class="price-box">
+        <div class="price-section">
           <template v-if="product.flashInfo">
-            <span class="old-price">${{ product.price }}</span>
-            <span class="new-price">${{ product.flashInfo.discountPrice }}</span>
+            <span class="original-price">${{ product.price }}</span>
+            <span class="discounted-price">${{ product.flashInfo.discountPrice }}</span>
           </template>
-
           <template v-else>
-            <span class="new-price">${{ product.price }}</span>
+            <span class="current-price">${{ product.price }}</span>
           </template>
         </div>
 
-        <!-- Actions -->
-        <div class="actions">
-          <button class="add-btn" @click="addToCartHandler">
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="btn btn-primary add-to-cart-btn" @click="addToCartHandler">
             Add to Cart
           </button>
-
-          <button class="details-btn" @click="toggleWishlist">
-            {{ isInWishlist(product.id) ? '❤️' : '🤍' }}
+          <button class="btn btn-secondary wishlist-btn" @click="toggleWishlist">
+            {{ isInWishlist(product.id) ? '❤️ In Wishlist' : '🤍 Add to Wishlist' }}
           </button>
         </div>
 
         <!-- Description -->
-        <p class="single-desc" v-if="product.description">
-          {{ product.description }}
-        </p>
+        <div class="product-description" v-if="product.description">
+          <h3>Description</h3>
+          <p>{{ product.description }}</p>
+        </div>
 
       </div>
 
     </div>
 
+    <!-- Not Found State -->
     <div v-else class="empty-state">
-      <p>Product not found.</p>
-      <button @click="router.push('/')" class="home-btn">Return Home</button>
+      <h2>Product Not Found</h2>
+      <p>We couldn't find the product you're looking for.</p>
+      <button @click="router.push('/')" class="btn btn-primary">Return to Home</button>
     </div>
 
   </div>
@@ -87,21 +89,22 @@ const loadProduct = async () => {
   loading.value = true
   try {
     const id = route.params.id
-
     const [pRes, fRes] = await Promise.all([
-      axios.get(`http://localhost:3000/products/${id}`),
-      axios.get(`http://localhost:3000/flashSale`)
+      axios.get(`/api/products/${id}`),
+      axios.get(`/api/flashSale`)
     ])
 
     product.value = pRes.data
     flashSales.value = fRes.data
 
     const flash = flashSales.value.find((f: any) => String(f.productId) === String(id))
-    if (flash) product.value.flashInfo = flash
+    if (flash) {
+      product.value.flashInfo = flash
+      startTimer()
+    }
 
-    startTimer()
   } catch (err) {
-    console.error(err)
+    console.error("Failed to load product:", err)
   } finally {
     loading.value = false
   }
@@ -116,14 +119,15 @@ const startTimer = () => {
     const now = Date.now()
     const dist = product.value.flashInfo.endTime - now
 
-    if (dist < 0) {
+    if (dist <= 0) {
       product.value.flashInfo = null
+      clearInterval(timer)
       return
     }
 
-    const h = Math.floor(dist / 3600000)
-    const m = Math.floor((dist % 3600000) / 60000)
-    const s = Math.floor((dist % 60000) / 1000)
+    const h = String(Math.floor(dist / 3600000)).padStart(2, '0')
+    const m = String(Math.floor((dist % 3600000) / 60000)).padStart(2, '0')
+    const s = String(Math.floor((dist % 60000) / 1000)).padStart(2, '0')
     product.value.flashInfo.timeLeft = `${h}:${m}:${s}`
   }, 1000)
 }
@@ -160,109 +164,166 @@ const toggleWishlist = () => {
 }
 
 onMounted(loadProduct)
-onUnmounted(() => timer && clearInterval(timer))
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
 </script>
 
 <style scoped>
-/* از همان استایل کارت‌ها استفاده می‌کنیم */
-
-.products-page {
-  padding: 40px 5%;
-  min-height: 80vh;
+.product-page-container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
 }
 
-.single-product {
-  display: flex;
+.product-details-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
   gap: 40px;
   align-items: flex-start;
 }
 
-.single-img-wrapper {
-  width: 350px;
-  height: 350px;
+.product-image-card, .product-info-card {
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow);
+  padding: 30px;
+  box-shadow: var(--shadow-sm);
 }
 
-.single-img-wrapper img {
-  max-width: 100%;
-  max-height: 100%;
+.product-image-card img {
+  width: 100%;
+  height: auto;
+  max-height: 450px;
   object-fit: contain;
+  border-radius: var(--radius);
 }
 
-.single-info {
-  flex: 1;
-}
-
-.single-name {
-  font-size: 1.8rem;
+.product-name {
+  font-size: 2.2rem;
   font-weight: 800;
-  margin-bottom: 10px;
-  color: var(--dark);
+  margin-bottom: 12px;
+  color: var(--text);
 }
 
-.single-meta {
-  color: var(--light);
-  margin-bottom: 20px;
+.product-meta {
+  font-size: 1rem;
+  color: var(--subtext);
+  margin-bottom: 24px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
-.single-sale {
-  position: static;
-  margin-bottom: 15px;
-}
+.meta-divider { color: var(--border); }
 
-.single-desc {
-  margin-top: 20px;
-  color: var(--dark);
-  line-height: 1.6;
-}
-
-/* بقیه استایل‌ها از فایل کارت‌ها کپی شده */
-.price-box { margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-.new-price { font-size: 1.25rem; font-weight: 800; color: var(--primary); }
-.old-price { text-decoration: line-through; color: var(--light); font-size: 0.9rem; }
-
-.actions { display: flex; gap: 10px; margin-top: 20px; }
-
-.add-btn {
-  flex: 2;
-  background: var(--dark);
+.flash-sale-badge {
+  background-color: var(--danger);
   color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: 0.3s;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  margin-bottom: 24px;
+  display: inline-block;
 }
-.add-btn:hover { background: var(--primary); }
 
-.details-btn {
-  flex: 1;
-  background: var(--bg);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--dark);
-  font-weight: 600;
-  transition: 0.3s;
+.price-section {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 30px;
 }
-.details-btn:hover { background: var(--border); }
 
-.loading-state, .empty-state { text-align: center; padding: 100px 0; }
-.spinner { width: 40px; height: 40px; border: 4px solid #eee; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.current-price, .discounted-price {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
+}
 
-.home-btn { 
-  padding: 10px 20px; 
-  background: var(--primary); 
-  color: white; 
-  border: none; 
-  border-radius: 8px;
+.original-price {
+  text-decoration: line-through;
+  color: var(--subtext);
+  font-size: 1.2rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.btn {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius);
   cursor: pointer;
+  border: none;
+}
+
+.btn-primary.add-to-cart-btn {
+  background-color: var(--primary);
+  color: white;
+  flex-grow: 1;
+}
+
+.btn-secondary.wishlist-btn {
+  background-color: transparent;
+  border: 1px solid var(--border);
+  color: var(--subtext);
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.product-description {
+  margin-top: 30px;
+  color: var(--text);
+}
+
+.product-description h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.product-description p {
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+/* Loading and Empty States */
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 80px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid var(--bg);
+  border-top: 5px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .product-details-layout {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .product-name { font-size: 1.8rem; }
+  .price-section span { font-size: 1.5rem; }
 }
 </style>
